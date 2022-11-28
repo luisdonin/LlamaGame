@@ -157,11 +157,9 @@ void collisionDetect(gamestate *gameState)
     {
         gameState->llamas.y = 140;
     }
-    if(cactus_x < llama_x)
-    {
+    if(cactus_x-70 < llama_y)
         gameState->cactus.x = cactusPositionX;
-    }
-
+    
    
 }
 
@@ -180,7 +178,7 @@ void doRender(SDL_Renderer *renderer, gamestate *gameState)
 
     SDL_Rect cactusTexture = {gameState->cactus.x, gameState->cactus.y, 200, 200};
     SDL_RenderCopyEx(renderer, gameState->cactu, NULL, &cactusTexture, 0, NULL, 0);
-/*
+
     SDL_SetRenderDrawColor(renderer, 180, 155,0 , 0);
 
     SDL_Rect rect = {gameState->floor.x, gameState->floor.y, gameState->floor.w, gameState->floor.h};
@@ -194,7 +192,7 @@ void doRender(SDL_Renderer *renderer, gamestate *gameState)
     SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0);
     SDL_Rect hitboxRect = {gameState->hitbox.x, gameState->hitbox.y, gameState->hitbox.w, gameState->hitbox.h};
     SDL_RenderFillRect(renderer, &hitboxRect);
-*/
+
     SDL_RenderPresent(renderer);
 }
 
