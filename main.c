@@ -157,7 +157,7 @@ void collisionDetect(gamestate *gameState)
     {
         gameState->llamas.y = 140;
     }
-    if(cactus_x-70 < llama_y)
+    if(cactus_x-70 < llama_y && cactus_x == llama_x)
         gameState->cactus.x = cactusPositionX;
     
    
@@ -212,8 +212,8 @@ int main(int argc, char *argv[])
         "Jack LLaman - Llaming Around!", // window title
         SDL_WINDOWPOS_UNDEFINED,         // initial x position
         SDL_WINDOWPOS_UNDEFINED,         // initial y position
-        800,                            // width, in pixels
-        600,                            // height, in pixels
+        1080,                            // width, in pixels
+        720,                            // height, in pixels
         SDL_WINDOW_OPENGL                // flags - see below
     );
 
