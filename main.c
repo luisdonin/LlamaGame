@@ -39,8 +39,8 @@ void loadGame(gamestate *gameState)
     gameState->hitbox.h = hitboxHeight;
 
 
-    llamaSurface = IMG_Load("llama-main-collision.png");
-    cactusSurface = IMG_Load("collision -cact.png");
+    llamaSurface = IMG_Load("llama-main.png");
+    cactusSurface = IMG_Load("cactus.png");
 
     
     gameState->llama = SDL_CreateTextureFromSurface(gameState->renderer, llamaSurface);
@@ -122,8 +122,6 @@ int processEvents(SDL_Window *window, gamestate *gameState, int *start)
     if (state[SDL_SCANCODE_UP])
     {
         gameState->llamas.y -= 10;
-      
-         
     }
     if (state[SDL_SCANCODE_DOWN])
     {
@@ -162,7 +160,15 @@ void collisionDetect(gamestate *gameState)
     
    
 }
-
+void llamaJump(gamestate *gameState)
+{
+    float llama_y = gameState->llamas.y;
+    if (llama_y < 210 )
+    {
+        gameState->llamas.y += 3;
+    }
+    
+}
 void doRender(SDL_Renderer *renderer, gamestate *gameState)
 {
     
@@ -235,6 +241,7 @@ int main(int argc, char *argv[])
         collisionDetect(&gameState);
         //ScoreCounting(&gameState);
         doRender(renderer, &gameState);
+        llamaJump(&gameState);
     }
 /*sdl2 collision check*/
     // Close and destroy the window

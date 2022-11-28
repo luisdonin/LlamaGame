@@ -1,5 +1,6 @@
 #include "SDL2/SDL_image.h"
-typedef struct{
+typedef struct
+{
     int x, y,w,h;
     char *name;
 }character;
@@ -20,7 +21,8 @@ typedef struct
     
 }gamestate;
 
-enum postionsAndSizes {
+enum postionsAndSizes
+{
     llamaPositionX = 200,
     llamaPositionY = 200,
     llamaWidth = 200,
@@ -42,4 +44,8 @@ enum postionsAndSizes {
     hitboxWidth = 10,
     hitboxHeight = 10,
 
+   
+
 };
+
+#define GRAVITY = 1
