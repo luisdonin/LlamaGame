@@ -10,7 +10,7 @@ typedef struct
 {
     character man;
     character llamas;
-    character cactus;
+    character cactus[100];
     character floor;
     character grass;
     character hitbox;

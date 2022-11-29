@@ -4,7 +4,7 @@
 #include <time.h>
 
 /*Links:
-http://www.lazyfoo.net/tutorials/SDL/27_collision_detection/index.php
+
 Compilar: gcc -o main main.c -lSDL2 -lSDL2_image
 
 
@@ -18,6 +18,7 @@ Falta:
 void loadGame(gamestate *gameState)
 {
 
+    int i=0;
     SDL_Surface *llamaSurface = NULL;
     SDL_Surface *cactusSurface = NULL;
     SDL_Surface *mountainSurface = NULL;
@@ -27,8 +28,7 @@ void loadGame(gamestate *gameState)
     gameState->llamas.w = llamaWidth;
     gameState->llamas.h = llammaHeight;
 
-    gameState->cactus.x = cactusPositionX;
-    gameState->cactus.y = cactusPositionY;
+    
 
     gameState->grass.x = floorXAxisStart;
     gameState->grass.y = floorYAxisStart;
@@ -48,7 +48,11 @@ void loadGame(gamestate *gameState)
 
     llamaSurface = IMG_Load("llama-main.png");
     cactusSurface = IMG_Load("cactus.png");
-
+    for (i = 0; i<100; i++)
+    {
+        gameState->cactus[i].x = cactusPositionX + rand()%500;
+        gameState->cactus[i].y = cactusPositionY;
+    }
     
     gameState->llama = SDL_CreateTextureFromSurface(gameState->renderer, llamaSurface);
     SDL_FreeSurface(llamaSurface);
@@ -142,33 +146,35 @@ int processEvents(SDL_Window *window, gamestate *gameState, int *start)
 
 void collisionDetect(gamestate *gameState,int *start)
 {
+    
    /*Here I need to reset the position of the cactus when it touches the llama so the right side of the llama
    and the left side of the cactus have to detect collision*/
 
     float llama_x = gameState->llamas.x, llama_y = gameState->llamas.y;
-    float cactus_x = gameState->cactus.x, cactus_y = gameState->cactus.y;
+    float cactus_x = gameState->cactus[0].x, cactus_y = gameState->cactus[0].y;
 
-    float resetCactus = gameState->hitbox.x - 100;
+    float resetCactus = gameState->hitbox.x - 200;
     
-    /*if(llamaRight > cactusleft+150){
-        gameState->cactus.x = cactusPositionX;
-    }
-    */
-   //Resets cactus when it exits the screen
+
     
-    if(cactus_x < resetCactus)
-    {
-        gameState->cactus.x = cactusPositionX;
-    }else
+
     //creates collision with the floor
+    
     if(llama_y >= floorYAxisStart - floorCollision)
     {
         gameState->llamas.y = 140;
     }
-    if(cactus_x-70 < llama_y && cactus_x == llama_x-70)
+    
+    if(cactus_x < llama_x && cactus_x < llama_y )
     {
-        gameState->cactus.x = cactusPositionX;
         
+
+        for(int i = 1; i < 100; i++)
+        gameState->cactus[i-1].x = gameState->cactus[i].x;
+        
+        // cria um cactus novo ao final do vetor
+        gameState->cactus[99].x = cactusPositionX + rand()%500;
+        gameState->cactus[99].y = cactusPositionY;
 
     }
     
@@ -178,17 +184,25 @@ void llamaJump(gamestate *gameState)
 {
     float llama_y = gameState->llamas.y;
     float acceleration = 0;
-    float cactus_move = gameState->cactus.x;
-    if (llama_y < 210 )
+    float cactus_move = gameState->cactus[0].x;
+    if (llama_y < 170 )
     {
-        gameState->llamas.y += 3;
+        gameState->llamas.y += 5;
     }
     if(cactus_move > gameState->hitbox.x)
     {
-        gameState->cactus.x -= 5;
+        gameState->cactus[0].x -= 5;
     }
-    if(cactus_move <= gameState->hitbox.x)
-        gameState->cactus.x = 700;
+    
+    if(cactus_move < gameState->hitbox.x)
+        {       
+            for(int i = 1; i < 100; i++)
+            gameState->cactus[i-1].x = gameState->cactus[i].x;
+        
+            // cria um cactus novo ao final do vetor
+            gameState->cactus[99].x = cactusPositionX + rand()%500;
+            gameState->cactus[99].y = cactusPositionY;
+        }
     
 }
 void doRender(SDL_Renderer *renderer, gamestate *gameState)
@@ -204,7 +218,7 @@ void doRender(SDL_Renderer *renderer, gamestate *gameState)
     SDL_Rect llamaTexture = {gameState->llamas.x,gameState->llamas.y ,gameState->llamas.h,gameState->llamas.w };
     SDL_RenderCopyEx(renderer, gameState->llama, NULL, &llamaTexture, 0, NULL, 0);
 
-    SDL_Rect cactusTexture = {gameState->cactus.x, gameState->cactus.y, 200, 200};
+    SDL_Rect cactusTexture = {gameState->cactus[0].x, gameState->cactus[0].y, 200, 200};
     SDL_RenderCopyEx(renderer, gameState->cactu, NULL, &cactusTexture, 0, NULL, 0);
 
     SDL_SetRenderDrawColor(renderer, 180, 155,0 , 0);
@@ -216,10 +230,10 @@ void doRender(SDL_Renderer *renderer, gamestate *gameState)
     SDL_Rect grassRect = {gameState->grass.x, gameState->grass.y, gameState->grass.w, gameState->grass.h};
     SDL_RenderFillRect(renderer, &grassRect);
     
-    
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 0);
+    /*
+    SDL_SetRenderDrawColor(renderer, 250, 255, 0, 0);
     SDL_Rect hitboxRect = {gameState->hitbox.x, gameState->hitbox.y, gameState->hitbox.w, gameState->hitbox.h};
-    SDL_RenderFillRect(renderer, &hitboxRect);
+    SDL_RenderFillRect(renderer, &hitboxRect);*/
 
     SDL_RenderPresent(renderer);
 }
@@ -267,7 +281,8 @@ int main(int argc, char *argv[])
         doRender(renderer, &gameState);
         llamaJump(&gameState);
     }
-/*sdl2 collision check*/
+
+    /*sdl2 collision check*/
     // Close and destroy the window
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
