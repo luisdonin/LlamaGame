@@ -120,20 +120,21 @@ int processEvents(SDL_Window *window, gamestate *gameState, int *start)
     if (state[SDL_SCANCODE_LEFT])
     {
 
-        gameState->cactus.x -= 5;
+       gameState->llamas.x -= 5;
     }
     if (state[SDL_SCANCODE_RIGHT])
     {
-        gameState->cactus.x +=5;
+        gameState->llamas.x +=5;
     }
     if (state[SDL_SCANCODE_UP])
     {
-        gameState->llamas.y -= 10;
+        gameState->llamas.y -= 14;
+        //gameState->llamas.x += 5;
     }
-    if (state[SDL_SCANCODE_DOWN])
+    /*if (state[SDL_SCANCODE_DOWN])
     {
         gameState->llamas.y += 10;
-    }
+    }*/
     return done;
 }
 
@@ -177,7 +178,7 @@ void llamaJump(gamestate *gameState)
     }
     if(cactus_move > gameState->hitbox.x)
     {
-        gameState->cactus.x--;
+        gameState->cactus.x -= 5;
     }
     if(cactus_move <= gameState->hitbox.x)
         gameState->cactus.x = 700;
