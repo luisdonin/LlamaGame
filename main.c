@@ -6,6 +6,13 @@
 /*Links:
 http://www.lazyfoo.net/tutorials/SDL/27_collision_detection/index.php
 Compilar: gcc -o main main.c -lSDL2 -lSDL2_image
+
+
+
+Falta: 
+    Renderizador da tela
+    pontos 
+    movimento do cactus
 */
 
 void loadGame(gamestate *gameState)
@@ -163,11 +170,17 @@ void collisionDetect(gamestate *gameState)
 void llamaJump(gamestate *gameState)
 {
     float llama_y = gameState->llamas.y;
+    float cactus_move = gameState->cactus.x;
     if (llama_y < 210 )
     {
         gameState->llamas.y += 3;
     }
-    
+    if(cactus_move > gameState->hitbox.x)
+    {
+        gameState->cactus.x--;
+    }
+    if(cactus_move <= gameState->hitbox.x)
+        gameState->cactus.x = 700;
 }
 void doRender(SDL_Renderer *renderer, gamestate *gameState)
 {
