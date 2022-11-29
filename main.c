@@ -117,18 +117,20 @@ int processEvents(SDL_Window *window, gamestate *gameState, int *start)
     }
     const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-    if (state[SDL_SCANCODE_LEFT])
+    /*if (state[SDL_SCANCODE_LEFT])
     {
 
        gameState->llamas.x -= 5;
-    }
-    if (state[SDL_SCANCODE_RIGHT])
+    }*/
+    /*if (state[SDL_SCANCODE_RIGHT])
     {
         gameState->llamas.x +=5;
-    }
+    }*/
     if (state[SDL_SCANCODE_UP])
     {
+        
         gameState->llamas.y -= 14;
+        
         //gameState->llamas.x += 5;
     }
     /*if (state[SDL_SCANCODE_DOWN])
@@ -138,7 +140,7 @@ int processEvents(SDL_Window *window, gamestate *gameState, int *start)
     return done;
 }
 
-void collisionDetect(gamestate *gameState)
+void collisionDetect(gamestate *gameState,int *start)
 {
    /*Here I need to reset the position of the cactus when it touches the llama so the right side of the llama
    and the left side of the cactus have to detect collision*/
@@ -163,14 +165,19 @@ void collisionDetect(gamestate *gameState)
     {
         gameState->llamas.y = 140;
     }
-    if(cactus_x-70 < llama_y && cactus_x == llama_x)
+    if(cactus_x-70 < llama_y && cactus_x == llama_x-70)
+    {
         gameState->cactus.x = cactusPositionX;
+        
+
+    }
     
    
 }
 void llamaJump(gamestate *gameState)
 {
     float llama_y = gameState->llamas.y;
+    float acceleration = 0;
     float cactus_move = gameState->cactus.x;
     if (llama_y < 210 )
     {
@@ -182,6 +189,7 @@ void llamaJump(gamestate *gameState)
     }
     if(cactus_move <= gameState->hitbox.x)
         gameState->cactus.x = 700;
+    
 }
 void doRender(SDL_Renderer *renderer, gamestate *gameState)
 {
@@ -248,11 +256,13 @@ int main(int argc, char *argv[])
     gameState.renderer = renderer;
     loadGame(&gameState);
     doRender(renderer, &gameState);
+   
 
+    
     while (!done)
     {
         done = processEvents(window, &gameState, &start);
-        collisionDetect(&gameState);
+        collisionDetect(&gameState, &done);
         //ScoreCounting(&gameState);
         doRender(renderer, &gameState);
         llamaJump(&gameState);
