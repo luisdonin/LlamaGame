@@ -77,22 +77,23 @@ void loadGame(gamestate *gameState)
     gameState->skyTexture = SDL_CreateTextureFromSurface(gameState->renderer, skySurface);
     SDL_FreeSurface(skySurface);
 }
-/*void ScoreCounting(gamestate *gameState)
+void ScoreCounting(gamestate *gameState)
 {
-    //If the position of the cactus is equal to the check then the score increases
-    int score = 1;
-    int i = 0;
-    for(i = 0; i < 100; i++)
+    clock_t t;
+    FILE *fp = fopen("score.txt", "w"); 
+    if(gameState->telaAtual == game)
     {
-        if (gameState->cactus[i].x < gameState->llamas.x)
-        {
-            score++;
-            printf("Score: %d", score);
-        }
-        
+        t = clock();
     }
+    
+    double score = ((double)t)/CLOCKS_PER_SEC;
+    printf("\nscore: %lf", score);
+    fscanf(fp, "%lf", &score);
+    fprintf(fp,"\nscore: %lf", score);
+    fclose(fp);
 
-}*/
+
+}
 int processEvents(SDL_Window *window, gamestate *gameState)
 {
     int done = 0;
@@ -177,6 +178,7 @@ int processEvents(SDL_Window *window, gamestate *gameState)
 
 void collisionDetection(gamestate *gameState)
 {
+
     for(int i = 0; i < 100; i++)
     {
         float llamah = llammaHeight, llamaw = llamaWidth;
@@ -188,17 +190,22 @@ void collisionDetection(gamestate *gameState)
         {
             if(llamax <= cactusx + cactusw && llamax+llamaw >= cactusx+cactusw)
             {
-                printf("pause");
+                
+                
                 if (gameState->telaAtual == game)
                 {
                     gameState->telaAtual = gameOver;
+                   
 
                 }
             }
 
         }
-      
+
+
     }
+    
+
     
 
 }
@@ -208,7 +215,7 @@ void llamaJump(gamestate *gameState)
     float llama_y = gameState->llamas.y;
     float cactus_move = gameState->cactus[0].x;
     float speed = 5;
-    
+                      
     // limite do  pulo
     if (llama_y < 192)
     {
@@ -227,13 +234,16 @@ void llamaJump(gamestate *gameState)
         printf("\n cactus reseta");
         
         for (int i = 1; i < 100; i++)
+        {
             gameState->cactus[i - 1].x = gameState->cactus[i].x;
-
+            
+        }
         // cria um cactus novo ao final do vetor
         gameState->cactus[99].x = cactusPositionX + rand() % 500;
         gameState->cactus[99].y = cactusPositionY;
+        
     }
-
+ 
 }
 
 void doRender(SDL_Renderer *renderer, gamestate *gameState)
@@ -275,11 +285,13 @@ void doRender(SDL_Renderer *renderer, gamestate *gameState)
 }
 void doUpdate(gamestate *gameState, int *done)
 {
+    
     if (gameState->telaAtual == game)
     {
-        //ScoreCounting(gameState);
+         ScoreCounting(gameState);
         collisionDetection(gameState);
         llamaJump(gameState);
+       
     }
 }
 int main(int argc, char *argv[])
@@ -316,14 +328,15 @@ int main(int argc, char *argv[])
     gameState.renderer = renderer;
     loadGame(&gameState);
     doRender(renderer, &gameState);
-
+    
     while (!done)
     {
         done = processEvents(window, &gameState);
         doUpdate(&gameState, &done);
         doRender(renderer, &gameState);
+        
     }
-
+    
     /*sdl2 collision check*/
     // Close and destroy the window
     SDL_DestroyWindow(window);
