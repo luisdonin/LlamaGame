@@ -23,7 +23,12 @@ Compilar: gcc -o main main.c -lSDL2 -lSDL2_image
 
 void loadGame(gamestate *gameState, screen_texture *start)
 {
-
+    /*
+    Função carrega todas as texturas do jogo, criamos as superficies (surfaces), depois definimos as
+    posições da llama, grama, chão, hitbox (usado pra checar se o cactus chegou no final do mapa), também usamos
+    para tela de Game Over.
+    Depois descobrimos que não era necessário, pois podia definir direto na função doRender().
+    */
     int i = 0;
     SDL_Surface *llamaSurface = NULL;
     SDL_Surface *cactusSurface = NULL;
@@ -67,6 +72,7 @@ void loadGame(gamestate *gameState, screen_texture *start)
     gameState->sky.w = skyWidth;
     gameState->sky.h = skyHeight;
 
+    //Img_load() carrega as imagens png nas superficies criadas acima.
     llamaSurface = IMG_Load("images/llamma-main.png");
     cactusSurface = IMG_Load("images/cactus.png");
     gameOverScreenSurface = IMG_Load("images/LLAME-OVER.png");
@@ -77,13 +83,15 @@ void loadGame(gamestate *gameState, screen_texture *start)
     studioSurface = IMG_Load("images/studio.png");
     restartLlammaSurface = IMG_Load("images/gameoverllama.png");
 
-
+    //Aqui é onde definimos a posição do cactus que são gerandos randômicamente na posição X.
     for (i = 0; i < 100; i++)
     {
         gameState->cactus[i].x = cactusPositionX + rand() % 500;
         gameState->cactus[i].y = cactusPositionY;
     }
-
+    /*Aqui são carregadas as texturas definidas em definitions.h e screen.h, essas funções 
+    transformam as superficies em texturas e usa alocação dinâmica para transforma-las em texturas.
+    */
     gameState->llama = SDL_CreateTextureFromSurface(gameState->renderer, llamaSurface);
     SDL_FreeSurface(llamaSurface);
 
@@ -113,6 +121,11 @@ void loadGame(gamestate *gameState, screen_texture *start)
 }
 void ScoreCounting(gamestate *gameState, screen_texture *start)
 {
+
+    /*
+    Aqui definimos o score e escrevemos em um arquivo (score.txt), usamos a função time*60 para que mostre em
+    números inteiros. 
+    */
     clock_t t;
     FILE *fp = fopen("score/score.txt", "w"); 
     if(gameState->telaAtual == game)
@@ -124,17 +137,16 @@ void ScoreCounting(gamestate *gameState, screen_texture *start)
         fscanf(fp, "%d", &score);
         fprintf(fp,"\nscore: %d", score);
     }
-
-    
-    
-    
     fclose(fp);
-    
-    
-
 }
 int processEvents(SDL_Window *window, gamestate *gameState, screen_texture *start)
 {
+    /*Nessa função definimos todos os eventos do jogo, registramos uso do teclado e definimos 
+    as funções que cada tecla faz
+    1-Espaço -> começa o jogo
+    2- P -> pausa o jogo
+    3- Esc -> fecha o jogo
+    4- também são definidas as telas do jogo*/
     int done = 0;
     SDL_Event event;
 
@@ -205,7 +217,11 @@ int processEvents(SDL_Window *window, gamestate *gameState, screen_texture *star
     }
     const Uint8 *state = SDL_GetKeyboardState(NULL);
 
-    
+    /*Não definimos o pulo usando SDLK pois diminui a fluidez do pulo, no entando
+    quando fazemos dessa forma, temos que criar uma solução para o limite do pulo
+    a função "SDL_SCANCODE_UP" registra todo o tempo em que a tecla esta apertada
+    entao criamos um limitador com a ajuda do professor.
+    */
     if (state[SDL_SCANCODE_UP] && !gameState->llamas.falling)
     {
         printf("\npulo");
@@ -226,36 +242,28 @@ int processEvents(SDL_Window *window, gamestate *gameState, screen_texture *star
 void collisionDetection(gamestate *gameState)
 {
 
+    /*Nesta função definimos a colisão do cactus com a llama
+    em partes inspirado em um tutorial do youtube, porém não conseguimos adaptar 
+    o código do tutorial, logo, fizemos na base de tentativas até funcionar*/
     for(int i = 0; i < 100; i++)
     {
         float llamah = llammaHeight, llamaw = llamaWidth;
         float llamax = gameState->llamas.x, llamay = gameState->llamas.y;
         float cactusx = gameState->cactus[i].x, cactusy =  gameState->cactus[i].y, cactusw =  gameState->cactus[i].w, cactush =  gameState->cactus[i].h;
-        
+        /*Caso haja intersecção entre o spride do cactus com a llama
+        o estado do jogo muda para "game over".*/
         if(llamay + llamah > cactusy && llamax < cactusx + cactush)
         
         {
             if(llamax <= cactusx + cactusw && llamax+llamaw >= cactusx+cactusw)
             {
-                
-                
                 if (gameState->telaAtual == game)
                 {
                     gameState->telaAtual = gameOver;
-                    
-                   
-
                 }
             }
-
         }
-
-
     }
-    
-
-    
-
 }
 
 void gameLogic(gamestate *gameState)
@@ -266,11 +274,13 @@ void gameLogic(gamestate *gameState)
     float acceleration = 3;
     float clouds_move = gameState->sky.x;
                       
-    // limite do  pulo
+    /*Limitador do pulo, enquanto o eixo y da llama for menor que a altura do chão, a llama caí.
+    O ponto 0 do eixo y é no topo da tela, então quanto maior o valor no eixo Y, mais para baixo 
+    a llama desce.*/ 
     if (llama_y < 191)
     {
-        //printf("\nQueda");
-        gameState->llamas.y += 5;
+        
+        gameState->llamas.y += 5; // "velocidade" da queda da llama
         
         
     }
@@ -279,21 +289,15 @@ void gameLogic(gamestate *gameState)
 
     if (cactus_move >= gameState->hitbox.x)
     {   
-       // printf("\ncactus se move");
+       /*Função que controla o movimento do cactus e a velocidade*/
         acceleration++;
         gameState->cactus[0].x -= speed * acceleration;
     }
-
-    if (clouds_move >= gameState->hitbox.x)
-    {   
-       // printf("\ncactus se move");
-        gameState->sky.x -= 5;
-    }
-
+    /*Condição de controle de renderização dos cactus, quando 
+    o cactus chega na posição do hitbox é resetado e trocado por um novo cactus em um array
+    de 99 elementos.*/
     if (cactus_move <= gameState->hitbox.x)
     {
-        printf("\n cactus reseta");
-        
         for (int i = 1; i < 100; i++)
         {
             gameState->cactus[i - 1].x = gameState->cactus[i].x;
@@ -309,17 +313,19 @@ void gameLogic(gamestate *gameState)
 
 void doRender(SDL_Renderer *renderer, gamestate *gameState,screen_texture *start )
 {
-    
+    /*Nessa função é onde renderizamos todos os sprites e retângulos na tela
+    de acordo com o estado do jogo.*/
     SDL_RenderClear(renderer);
     if(gameState->telaAtual == initscreen || gameState->telaAtual == gameOver )
     {
-         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);//define a cor do plano de fundo (preta)
     }else
-    SDL_SetRenderDrawColor(renderer, 0, 180, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 0, 180, 255, 255); //define a cor do plano de fundo (azul)
     SDL_RenderClear(renderer);
     if(gameState->telaAtual == game || gameState->telaAtual == pause)
     {
-
+    /*Quando o jogo está no estado "game" e "pause" todas as texturas são renderizadas
+    usando SDL_rect e SDL_RenderCopy (usado para as texturas definidas em loadgame())*/
 
     SDL_RenderClear(renderer);
     SDL_Rect sky_texture = {gameState->sky.x, gameState->sky.y, gameState->sky.w, gameState->sky.h};
@@ -382,6 +388,7 @@ void doRender(SDL_Renderer *renderer, gamestate *gameState,screen_texture *start
 }
 void doUpdate(gamestate *gameState, int *done, screen_texture *start)
 {
+    /*Essa função controla o estado principal do jogo e as funçoes de score, colisão e lógica*/
     
     if (gameState->telaAtual == game)
     {
@@ -395,7 +402,7 @@ int main(int argc, char *argv[])
 {
 
     int done = 0;
-   // int start = 0;
+    
     SDL_Renderer *renderer = NULL;
     SDL_Window *window = NULL;
     gamestate gameState;
@@ -405,7 +412,7 @@ int main(int argc, char *argv[])
 
     SDL_Init(SDL_INIT_VIDEO);
     srandom((int)time(NULL));
-    // Create an application window with the following settings:
+    // Definição e criação da janela.
     window = SDL_CreateWindow(
         "Jack LLaman - Llaming Around!", // window title
         SDL_WINDOWPOS_UNDEFINED,         // initial x position
@@ -426,7 +433,7 @@ int main(int argc, char *argv[])
     gameState.renderer = renderer;
     loadGame(&gameState, &start);
     doRender(renderer, &gameState, &start);
-    
+    //laço principal do jogo
     while (!done)
     {
         done = processEvents(window, &gameState, &start);
