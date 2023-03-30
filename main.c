@@ -7,6 +7,9 @@
 
 
 
+
+
+
 /*
 Grupo
 José Luis Bastos Donin
@@ -32,7 +35,7 @@ void loadGame(gamestate *gameState, screen_texture *start)
     int i = 0;
     SDL_Surface *llamaSurface = NULL;
     SDL_Surface *cactusSurface = NULL;
-    SDL_Surface *mountainSurface = NULL;
+
     SDL_Surface *gameOverScreenSurface = NULL;
     SDL_Surface *skySurface = NULL;
     SDL_Surface *startScreenSurface = NULL;
@@ -178,14 +181,14 @@ int processEvents(SDL_Window *window, gamestate *gameState, screen_texture *star
 
                     break;
                 case SDLK_SPACE:
-                    if (gameState->telaAtual == initscreen)
-                    {
+                    if (gameState->telaAtual == initscreen){
                         gameState->telaAtual = game;
                         gameState->cactus[0].x = cactusPositionX;
                         
                         
                         return done;
-                    }else 
+                    }
+                    else
                     if(gameState->telaAtual == gameOver)
                     {
                         gameState->telaAtual = game;
@@ -247,32 +250,37 @@ void collisionDetection(gamestate *gameState)
     o código do tutorial, logo, fizemos na base de tentativas até funcionar*/
     for(int i = 0; i < 100; i++)
     {
-        float llamah = llammaHeight, llamaw = llamaWidth;
-        float llamax = gameState->llamas.x, llamay = gameState->llamas.y;
-        float cactusx = gameState->cactus[i].x, cactusy =  gameState->cactus[i].y, cactusw =  gameState->cactus[i].w, cactush =  gameState->cactus[i].h;
+        int llamah = llammaHeight, llamaw = llamaWidth;
+        int llamax = gameState->llamas.x, llamay = gameState->llamas.y;
+        int cactusx = gameState->cactus[i].x, cactusy =  gameState->cactus[i].y, cactusw =  gameState->cactus[i].w, cactush = gameState->cactus[i].h;
         /*Caso haja intersecção entre o spride do cactus com a llama
         o estado do jogo muda para "game over".*/
-        if(llamay + llamah > cactusy && llamax < cactusx + cactush)
-        
-        {
-            if(llamax <= cactusx + cactusw && llamax+llamaw >= cactusx+cactusw)
+
+
+        //if(llamay + llamah > cactusy && llamax < cactusx + cactush)
+        //if(llamax > cactusx)
+
+
+            //if(llamax <= cactusx + cactusw && llamax+llamaw >= cactusx+cactusw)
+            if((llamax > cactusx && llamax < cactusx + cactusw) && (llamay > cactusy))
+
             {
                 if (gameState->telaAtual == game)
                 {
                     gameState->telaAtual = gameOver;
                 }
             }
-        }
+
     }
 }
 
 void gameLogic(gamestate *gameState)
 {
-    float llama_y = gameState->llamas.y;
-    float cactus_move = gameState->cactus[0].x;
+    int llama_y = gameState->llamas.y;
+    int cactus_move = gameState->cactus[0].x;
     float speed = 2;
     float acceleration = 3;
-    float clouds_move = gameState->sky.x;
+    int clouds_move = gameState->sky.x;
                       
     /*Limitador do pulo, enquanto o eixo y da llama for menor que a altura do chão, a llama caí.
     O ponto 0 do eixo y é no topo da tela, então quanto maior o valor no eixo Y, mais para baixo 
@@ -321,7 +329,7 @@ void doRender(SDL_Renderer *renderer, gamestate *gameState,screen_texture *start
          SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);//define a cor do plano de fundo (preta)
     }else
     SDL_SetRenderDrawColor(renderer, 0, 180, 255, 255); //define a cor do plano de fundo (azul)
-    SDL_RenderClear(renderer);
+        SDL_RenderClear(renderer);
     if(gameState->telaAtual == game || gameState->telaAtual == pause)
     {
     /*Quando o jogo está no estado "game" e "pause" todas as texturas são renderizadas
@@ -439,10 +447,11 @@ int main(int argc, char *argv[])
         done = processEvents(window, &gameState, &start);
         doUpdate(&gameState, &done, &start);
         doRender(renderer, &gameState, &start);
-        
+
     }
     
     /*sdl2 collision check*/
+
     // Close and destroy the window
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
