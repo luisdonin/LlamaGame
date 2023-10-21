@@ -10,6 +10,7 @@
 
 
 
+
 /*
 Grupo
 José Luis Bastos Donin
@@ -244,78 +245,65 @@ int processEvents(SDL_Window *window, gamestate *gameState, screen_texture *star
 
 void collisionDetection(gamestate *gameState)
 {
-
-    /*Nesta função definimos a colisão do cactus com a llama
-    em partes inspirado em um tutorial do youtube, porém não conseguimos adaptar 
-    o código do tutorial, logo, fizemos na base de tentativas até funcionar*/
-    for(int i = 0; i < 100; i++)
+    // Loop through all cacti in the game state
+    for (int i = 0; i < 100; i++)
     {
+        // Get the dimensions and position of the llama and cactus sprites
         int llamah = llammaHeight, llamaw = llamaWidth;
         int llamax = gameState->llamas.x, llamay = gameState->llamas.y;
-        int cactusx = gameState->cactus[i].x, cactusy =  gameState->cactus[i].y, cactusw =  gameState->cactus[i].w, cactush = gameState->cactus[i].h;
-        /*Caso haja intersecção entre o spride do cactus com a llama
-        o estado do jogo muda para "game over".*/
+        int cactusx = gameState->cactus[i].x, cactusy = gameState->cactus[i].y, cactusw = gameState->cactus[i].w, cactush = gameState->cactus[i].h;
 
-
-        //if(llamay + llamah > cactusy && llamax < cactusx + cactush)
-        //if(llamax > cactusx)
-
-
-            //if(llamax <= cactusx + cactusw && llamax+llamaw >= cactusx+cactusw)
-            if((llamax > cactusx && llamax < cactusx + cactusw) && (llamay > cactusy))
-
+        // Check if there is a collision between the llama and the current cactus
+        if ((llamax > cactusx && llamax < cactusx + cactusw) && (llamay > cactusy))
+        {
+            // If there is a collision and the current screen is the game screen, change the game state to the game over screen
+            if (gameState->telaAtual == game)
             {
-                if (gameState->telaAtual == game)
-                {
-                    gameState->telaAtual = gameOver;
-                }
+                gameState->telaAtual = gameOver;
+                break; // Exit the loop as soon as a collision is detected
             }
-
+        }
     }
 }
 
 void gameLogic(gamestate *gameState)
 {
+    int score = 0;
     int llama_y = gameState->llamas.y;
     int cactus_move = gameState->cactus[0].x;
     float speed = 2;
     float acceleration = 3;
     int clouds_move = gameState->sky.x;
                       
-    /*Limitador do pulo, enquanto o eixo y da llama for menor que a altura do chão, a llama caí.
-    O ponto 0 do eixo y é no topo da tela, então quanto maior o valor no eixo Y, mais para baixo 
-    a llama desce.*/ 
+    // Update the position of the llama sprite
     if (llama_y < 191)
     {
-        
-        gameState->llamas.y += 5; // "velocidade" da queda da llama
-        
-        
+        // If the llama is falling, update its position based on gravity
+        gameState->llamas.y += 5;
     }
     else
+    {
         gameState->llamas.falling = 0;
+    }
 
+    // Control the movement of the cacti and the speed of the game
     if (cactus_move >= gameState->hitbox.x)
     {   
-       /*Função que controla o movimento do cactus e a velocidade*/
         acceleration++;
         gameState->cactus[0].x -= speed * acceleration;
     }
-    /*Condição de controle de renderização dos cactus, quando 
-    o cactus chega na posição do hitbox é resetado e trocado por um novo cactus em um array
-    de 99 elementos.*/
+
+    // Reset cacti and create new ones as needed
     if (cactus_move <= gameState->hitbox.x)
     {
         for (int i = 1; i < 100; i++)
         {
             gameState->cactus[i - 1].x = gameState->cactus[i].x;
-            
         }
-        // cria um cactus novo ao final do vetor
         gameState->cactus[99].x = cactusPositionX + rand() % 500;
         gameState->cactus[99].y = cactusPositionY;
-        
     }
+
  
 }
 
