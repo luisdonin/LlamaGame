@@ -13,7 +13,7 @@ const CACTUS_WIDTH = 95;
 const CACTUS_HEIGHT = 100;
 
 const FLOOR_Y = 260;
-const FLOOR_HEIGHT = 2000;
+const FLOOR_HEIGHT = 460; // GAME_HEIGHT - FLOOR_Y
 const GRASS_HEIGHT = 60;
 
 const JUMP_SPEED = 20;
@@ -284,7 +284,7 @@ class LlamaGame {
         
         // Llama
         if (this.images.llama && this.images.llama.complete) {
-            this.ctx.drawImage(this.images.llama, this.llama.x, this.llama.y, this.llama.height, this.llama.width);
+            this.ctx.drawImage(this.images.llama, this.llama.x, this.llama.y, this.llama.width, this.llama.height);
         }
         
         // First cactus (visible one)
