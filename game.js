@@ -19,6 +19,7 @@ const GRASS_HEIGHT = 60;
 const JUMP_SPEED = 20;
 const GRAVITY = 5;
 const MIN_Y = 10;
+const MOVE_SPEED = 8;
 
 // Game states
 const GameState = {
@@ -68,6 +69,11 @@ class LlamaGame {
         
         // Input
         this.keys = {};
+        this.touchControls = {
+            left: false,
+            right: false,
+            jump: false
+        };
         
         // Frame timing for smooth movement
         this.lastFrameTime = 0;
@@ -152,6 +158,64 @@ class LlamaGame {
         window.addEventListener('keyup', (e) => {
             this.keys[e.key] = false;
         });
+        
+        // Touch controls setup
+        this.setupTouchControls();
+    }
+    
+    setupTouchControls() {
+        // Create touch control elements
+        const gameContainer = document.getElementById('game-container');
+        
+        // Create touch controls container
+        const touchControls = document.createElement('div');
+        touchControls.id = 'touch-controls';
+        touchControls.innerHTML = `
+            <button id="btn-left" class="touch-btn touch-btn-left">←</button>
+            <button id="btn-right" class="touch-btn touch-btn-right">→</button>
+            <button id="btn-jump" class="touch-btn touch-btn-jump">JUMP</button>
+        `;
+        gameContainer.appendChild(touchControls);
+        
+        // Get button references
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const btnJump = document.getElementById('btn-jump');
+        
+        // Touch event handlers
+        const handleTouchStart = (control) => (e) => {
+            e.preventDefault();
+            this.touchControls[control] = true;
+            
+            // Handle game state changes for jump button
+            if (control === 'jump') {
+                if (this.currentState === GameState.INIT) {
+                    this.currentState = GameState.PLAYING;
+                    this.resetGame();
+                } else if (this.currentState === GameState.GAME_OVER) {
+                    this.currentState = GameState.PLAYING;
+                    this.resetGame();
+                }
+            }
+        };
+        
+        const handleTouchEnd = (control) => (e) => {
+            e.preventDefault();
+            this.touchControls[control] = false;
+        };
+        
+        // Add event listeners for each button
+        ['touchstart', 'mousedown'].forEach(event => {
+            btnLeft.addEventListener(event, handleTouchStart('left'));
+            btnRight.addEventListener(event, handleTouchStart('right'));
+            btnJump.addEventListener(event, handleTouchStart('jump'));
+        });
+        
+        ['touchend', 'touchcancel', 'mouseup'].forEach(event => {
+            btnLeft.addEventListener(event, handleTouchEnd('left'));
+            btnRight.addEventListener(event, handleTouchEnd('right'));
+            btnJump.addEventListener(event, handleTouchEnd('jump'));
+        });
     }
     
     resetGame() {
@@ -159,6 +223,7 @@ class LlamaGame {
         this.startTime = Date.now();
         this.speed = 2;
         this.acceleration = 0;
+        this.llama.x = LLAMA_X;
         this.llama.y = LLAMA_Y;
         this.llama.falling = false;
         this.llama.jumpSpeed = 0;
@@ -188,12 +253,26 @@ class LlamaGame {
         this.scoreDisplay.textContent = `Score: ${this.score}`;
         
         // Handle jump input
-        if ((this.keys['ArrowUp'] || this.keys['w'] || this.keys['W']) && !this.llama.falling) {
+        if (((this.keys['ArrowUp'] || this.keys['w'] || this.keys['W']) || this.touchControls.jump) && !this.llama.falling) {
             this.llama.y -= JUMP_SPEED;
             
             if (this.llama.y < MIN_Y) {
                 this.llama.y = MIN_Y;
                 this.llama.falling = true;
+            }
+        }
+        
+        // Handle horizontal movement
+        if ((this.keys['ArrowLeft'] || this.keys['a'] || this.keys['A']) || this.touchControls.left) {
+            this.llama.x -= MOVE_SPEED * deltaTime;
+            if (this.llama.x < 0) {
+                this.llama.x = 0;
+            }
+        }
+        if ((this.keys['ArrowRight'] || this.keys['d'] || this.keys['D']) || this.touchControls.right) {
+            this.llama.x += MOVE_SPEED * deltaTime;
+            if (this.llama.x > GAME_WIDTH - LLAMA_WIDTH) {
+                this.llama.x = GAME_WIDTH - LLAMA_WIDTH;
             }
         }
         
