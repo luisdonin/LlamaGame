@@ -16,10 +16,13 @@ const FLOOR_Y = 260;
 const FLOOR_HEIGHT = 460; // GAME_HEIGHT - FLOOR_Y
 const GRASS_HEIGHT = 60;
 
-const JUMP_SPEED = 20;
-const GRAVITY = 5;
+const JUMP_SPEED = 28;
+const GRAVITY = 2600; // px/s^2
 const MIN_Y = 10;
-const MOVE_SPEED = 8;
+const MOVE_SPEED = 350; // px/s
+const SPAWN_MIN_TIME = 1.1;
+const SPAWN_MAX_TIME = 2.3;
+const GROUND_STRIPE_WIDTH = 80;
 
 // Game states
 const GameState = {
@@ -40,9 +43,9 @@ class LlamaGame {
         this.currentState = GameState.INIT;
         this.score = 0;
         this.startTime = 0;
-        this.speed = 2;
+        this.speed = 220;
         this.acceleration = 0;
-        this.maxSpeed = 15; // Cap maximum speed
+        this.maxSpeed = 520; // Cap maximum speed (pixels/sec)
         
         // Llama properties
         this.llama = {
@@ -55,12 +58,8 @@ class LlamaGame {
         };
         
         // Optimized cactus management
-        this.activeCactus = {
-            x: CACTUS_START_X,
-            y: CACTUS_Y,
-            width: CACTUS_WIDTH,
-            height: CACTUS_HEIGHT
-        };
+        this.cacti = [];
+        this.nextSpawnTime = 0;
         
         // Images
         this.images = {};
@@ -89,9 +88,14 @@ class LlamaGame {
     }
     
     resetCactus() {
-        // Reset single cactus to starting position with random offset
-        this.activeCactus.x = CACTUS_START_X + Math.random() * 500;
-        this.activeCactus.y = CACTUS_Y;
+        this.cacti = [];
+        this.scheduleNextSpawn();
+    }
+
+    scheduleNextSpawn() {
+        const now = performance.now() / 1000;
+        const interval = SPAWN_MIN_TIME + Math.random() * (SPAWN_MAX_TIME - SPAWN_MIN_TIME);
+        this.nextSpawnTime = now + interval;
     }
     
     loadAssets() {
@@ -221,7 +225,7 @@ class LlamaGame {
     resetGame() {
         this.score = 0;
         this.startTime = Date.now();
-        this.speed = 2;
+        this.speed = 220;
         this.acceleration = 0;
         this.llama.x = LLAMA_X;
         this.llama.y = LLAMA_Y;
@@ -245,7 +249,7 @@ class LlamaGame {
         if (!this.lastFrameTime) {
             this.lastFrameTime = currentTime;
         }
-        const deltaTime = Math.min((currentTime - this.lastFrameTime) / 16.67, 2); // Cap at 2x for performance
+        const deltaTime = Math.min((currentTime - this.lastFrameTime) / 1000, 0.05); // seconds, cap for stability
         this.lastFrameTime = currentTime;
         
         // Update score based on time
@@ -278,39 +282,47 @@ class LlamaGame {
         
         // Apply gravity
         if (this.llama.y < LLAMA_Y) {
-            this.llama.y += GRAVITY;
+            this.llama.y += GRAVITY * deltaTime;
         } else {
             this.llama.y = LLAMA_Y;
             this.llama.falling = false;
         }
         
-        // Move cactus with optimized calculation
-        if (this.activeCactus.x >= 0) {
-            // Gradually increase acceleration, but cap at max speed
-            this.acceleration = Math.min(this.acceleration + 0.001, this.maxSpeed - this.speed);
-            const currentSpeed = (this.speed + this.acceleration) * deltaTime;
-            this.activeCactus.x -= currentSpeed;
+        // Gradually increase acceleration, but cap at max speed
+        this.acceleration = Math.min(this.acceleration + 40 * deltaTime, this.maxSpeed - this.speed);
+        const currentSpeed = (this.speed + this.acceleration);
+
+        // Spawn new cactus based on timer
+        const now = currentTime / 1000;
+        if (now >= this.nextSpawnTime) {
+            this.cacti.push({
+                x: GAME_WIDTH + Math.random() * 200,
+                y: CACTUS_Y,
+                width: CACTUS_WIDTH,
+                height: CACTUS_HEIGHT
+            });
+            this.scheduleNextSpawn();
         }
-        
-        // Reset cactus when it goes off screen
-        if (this.activeCactus.x <= -CACTUS_WIDTH) {
-            this.resetCactus();
-        }
-        
+
+        // Move cacti and remove off-screen ones
+        this.cacti.forEach(c => {
+            c.x -= currentSpeed * deltaTime;
+        });
+        this.cacti = this.cacti.filter(c => c.x > -CACTUS_WIDTH);
+
         // Collision detection
         this.checkCollision();
     }
     
     checkCollision() {
-        // Optimized collision check - only check active cactus
-        const cactus = this.activeCactus;
-        if (this.llama.x < cactus.x + cactus.width &&
-            this.llama.x + this.llama.width > cactus.x &&
-            this.llama.y < cactus.y + cactus.height &&
-            this.llama.y + this.llama.height > cactus.y) {
-            
-            // Collision detected
-            this.currentState = GameState.GAME_OVER;
+        for (const cactus of this.cacti) {
+            if (this.llama.x < cactus.x + cactus.width &&
+                this.llama.x + this.llama.width > cactus.x &&
+                this.llama.y < cactus.y + cactus.height &&
+                this.llama.y + this.llama.height > cactus.y) {
+                this.currentState = GameState.GAME_OVER;
+                break;
+            }
         }
     }
     
@@ -358,22 +370,29 @@ class LlamaGame {
             this.ctx.drawImage(this.images.sky, 0, 0, GAME_WIDTH, 441);
         }
         
+        // Floor with moving stripes for forward perception
+        this.ctx.fillStyle = '#b49b00';
+        this.ctx.fillRect(0, FLOOR_Y, GAME_WIDTH, FLOOR_HEIGHT);
+        this.ctx.fillStyle = '#d8bb37';
+        const stripeOffset = (performance.now() / 8) % GROUND_STRIPE_WIDTH;
+        for (let x = -GROUND_STRIPE_WIDTH; x < GAME_WIDTH; x += GROUND_STRIPE_WIDTH * 2) {
+            this.ctx.fillRect(x + stripeOffset, FLOOR_Y, GROUND_STRIPE_WIDTH, FLOOR_HEIGHT);
+        }
+        
         // Grass
         this.ctx.fillStyle = '#00ff00';
         this.ctx.fillRect(0, FLOOR_Y, GAME_WIDTH, GRASS_HEIGHT);
-        
-        // Floor
-        this.ctx.fillStyle = '#b49b00';
-        this.ctx.fillRect(0, FLOOR_Y, GAME_WIDTH, FLOOR_HEIGHT);
         
         // Llama
         if (this.images.llama && this.images.llama.complete) {
             this.ctx.drawImage(this.images.llama, this.llama.x, this.llama.y, this.llama.width, this.llama.height);
         }
         
-        // Active cactus
+        // Cacti
         if (this.images.cactus && this.images.cactus.complete) {
-            this.ctx.drawImage(this.images.cactus, this.activeCactus.x, this.activeCactus.y, CACTUS_WIDTH, CACTUS_HEIGHT);
+            this.cacti.forEach(cactus => {
+                this.ctx.drawImage(this.images.cactus, cactus.x, cactus.y, CACTUS_WIDTH, CACTUS_HEIGHT);
+            });
         }
         
         // Pause indicator
