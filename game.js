@@ -41,6 +41,7 @@ class LlamaGame {
         this.startTime = 0;
         this.speed = 2;
         this.acceleration = 0;
+        this.maxSpeed = 15; // Cap maximum speed
         
         // Llama properties
         this.llama = {
@@ -52,9 +53,13 @@ class LlamaGame {
             jumpSpeed: 0
         };
         
-        // Cacti array
-        this.cacti = [];
-        this.initCacti();
+        // Optimized cactus management
+        this.activeCactus = {
+            x: CACTUS_START_X,
+            y: CACTUS_Y,
+            width: CACTUS_WIDTH,
+            height: CACTUS_HEIGHT
+        };
         
         // Images
         this.images = {};
@@ -63,6 +68,9 @@ class LlamaGame {
         
         // Input
         this.keys = {};
+        
+        // Frame timing for smooth movement
+        this.lastFrameTime = 0;
         
         // Bind methods
         this.update = this.update.bind(this);
@@ -74,16 +82,10 @@ class LlamaGame {
         this.setupInput();
     }
     
-    initCacti() {
-        this.cacti = [];
-        for (let i = 0; i < 100; i++) {
-            this.cacti.push({
-                x: CACTUS_START_X + Math.random() * 500,
-                y: CACTUS_Y,
-                width: CACTUS_WIDTH,
-                height: CACTUS_HEIGHT
-            });
-        }
+    resetCactus() {
+        // Reset single cactus to starting position with random offset
+        this.activeCactus.x = CACTUS_START_X + Math.random() * 500;
+        this.activeCactus.y = CACTUS_Y;
     }
     
     loadAssets() {
@@ -160,7 +162,8 @@ class LlamaGame {
         this.llama.y = LLAMA_Y;
         this.llama.falling = false;
         this.llama.jumpSpeed = 0;
-        this.initCacti();
+        this.lastFrameTime = 0;
+        this.resetCactus();
     }
     
     startGame() {
@@ -168,10 +171,17 @@ class LlamaGame {
         this.gameLoop();
     }
     
-    update() {
+    update(currentTime) {
         if (this.currentState !== GameState.PLAYING) {
             return;
         }
+        
+        // Calculate delta time for frame-independent movement
+        if (!this.lastFrameTime) {
+            this.lastFrameTime = currentTime;
+        }
+        const deltaTime = Math.min((currentTime - this.lastFrameTime) / 16.67, 2); // Cap at 2x for performance
+        this.lastFrameTime = currentTime;
         
         // Update score based on time
         this.score = Math.floor((Date.now() - this.startTime) / 100);
@@ -195,20 +205,17 @@ class LlamaGame {
             this.llama.falling = false;
         }
         
-        // Move cacti
-        if (this.cacti[0].x >= 0) {
-            this.acceleration += 0.001;
-            this.cacti[0].x -= this.speed + this.acceleration;
+        // Move cactus with optimized calculation
+        if (this.activeCactus.x >= 0) {
+            // Gradually increase acceleration, but cap at max speed
+            this.acceleration = Math.min(this.acceleration + 0.001, this.maxSpeed - this.speed);
+            const currentSpeed = (this.speed + this.acceleration) * deltaTime;
+            this.activeCactus.x -= currentSpeed;
         }
         
-        // Reset cacti when they go off screen
-        if (this.cacti[0].x <= 0) {
-            // Shift cacti array
-            for (let i = 0; i < this.cacti.length - 1; i++) {
-                this.cacti[i].x = this.cacti[i + 1].x;
-            }
-            // Add new cactus at the end
-            this.cacti[this.cacti.length - 1].x = CACTUS_START_X + Math.random() * 500;
+        // Reset cactus when it goes off screen
+        if (this.activeCactus.x <= -CACTUS_WIDTH) {
+            this.resetCactus();
         }
         
         // Collision detection
@@ -216,17 +223,15 @@ class LlamaGame {
     }
     
     checkCollision() {
-        for (let cactus of this.cacti) {
-            // Check if llama and cactus overlap
-            if (this.llama.x < cactus.x + cactus.width &&
-                this.llama.x + this.llama.width > cactus.x &&
-                this.llama.y < cactus.y + cactus.height &&
-                this.llama.y + this.llama.height > cactus.y) {
-                
-                // Collision detected
-                this.currentState = GameState.GAME_OVER;
-                break;
-            }
+        // Optimized collision check - only check active cactus
+        const cactus = this.activeCactus;
+        if (this.llama.x < cactus.x + cactus.width &&
+            this.llama.x + this.llama.width > cactus.x &&
+            this.llama.y < cactus.y + cactus.height &&
+            this.llama.y + this.llama.height > cactus.y) {
+            
+            // Collision detected
+            this.currentState = GameState.GAME_OVER;
         }
     }
     
@@ -287,9 +292,9 @@ class LlamaGame {
             this.ctx.drawImage(this.images.llama, this.llama.x, this.llama.y, this.llama.width, this.llama.height);
         }
         
-        // First cactus (visible one)
-        if (this.images.cactus && this.images.cactus.complete && this.cacti.length > 0) {
-            this.ctx.drawImage(this.images.cactus, this.cacti[0].x, this.cacti[0].y, CACTUS_WIDTH, CACTUS_HEIGHT);
+        // Active cactus
+        if (this.images.cactus && this.images.cactus.complete) {
+            this.ctx.drawImage(this.images.cactus, this.activeCactus.x, this.activeCactus.y, CACTUS_WIDTH, CACTUS_HEIGHT);
         }
         
         // Pause indicator
@@ -330,8 +335,8 @@ class LlamaGame {
         this.ctx.fillText(`Final Score: ${this.score}`, 400, 380);
     }
     
-    gameLoop() {
-        this.update();
+    gameLoop(currentTime) {
+        this.update(currentTime);
         this.render();
         requestAnimationFrame(this.gameLoop);
     }

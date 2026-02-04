@@ -271,8 +271,9 @@ void gameLogic(gamestate *gameState)
     int score = 0;
     int llama_y = gameState->llamas.y;
     int cactus_move = gameState->cactus[0].x;
-    float speed = 2;
-    float acceleration = 3;
+    static float speed = 2;
+    static float acceleration = 0;
+    float maxSpeed = 15.0; // Cap maximum speed
     int clouds_move = gameState->sky.x;
                       
     // Update the position of the llama sprite
@@ -289,19 +290,16 @@ void gameLogic(gamestate *gameState)
     // Control the movement of the cacti and the speed of the game
     if (cactus_move >= gameState->hitbox.x)
     {   
-        acceleration++;
-        gameState->cactus[0].x -= speed * acceleration;
+        // Gradually increase acceleration, but cap at max speed
+        acceleration = (acceleration < (maxSpeed - speed)) ? acceleration + 0.1f : (maxSpeed - speed);
+        gameState->cactus[0].x -= (int)(speed + acceleration);
     }
 
-    // Reset cacti and create new ones as needed
+    // Reset cacti and create new ones as needed - optimized without shifting
     if (cactus_move <= gameState->hitbox.x)
     {
-        for (int i = 1; i < 100; i++)
-        {
-            gameState->cactus[i - 1].x = gameState->cactus[i].x;
-        }
-        gameState->cactus[99].x = cactusPositionX + rand() % 500;
-        gameState->cactus[99].y = cactusPositionY;
+        gameState->cactus[0].x = cactusPositionX + rand() % 500;
+        gameState->cactus[0].y = cactusPositionY;
     }
 
  
